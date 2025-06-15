@@ -20,7 +20,7 @@
 
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
-      <p>이슈 목록을 불러오는 중입니다...</p>
+      <p>이슈 목록을 불러오는 중입니다... ({{ statusFilter }})</p>
     </div>
     <div v-else-if="filteredIssues.length === 0" class="no-issues">
       <div class="empty-state">
@@ -32,21 +32,21 @@
       </div>
     </div>
     <div v-else class="issue-cards">
-      <div 
-        v-for="issue in filteredIssues" 
-        :key="issue.id" 
+      <div
+        v-for="issue in filteredIssues"
+        :key="issue.id"
         class="card issue-card"
         @click="goToIssueDetail(issue.id)"
       >
         <div class="issue-card-header">
           <h3>{{ issue.title }}</h3>
-          <div 
-            class="status-badge" 
+          <div
+            class="status-badge"
             :class="{
               'status-pending': issue.status === 'PENDING',
               'status-in-progress': issue.status === 'IN_PROGRESS',
               'status-completed': issue.status === 'COMPLETED',
-              'status-cancelled': issue.status === 'CANCELLED'
+              'status-cancelled': issue.status === 'CANCELLED',
             }"
           >
             {{ issue.status }}
@@ -60,9 +60,7 @@
             <span class="issue-assignee">
               담당자: {{ issue.user ? issue.user.name : '없음' }}
             </span>
-            <span class="issue-date">
-              생성일: {{ formatDate(issue.createdAt) }}
-            </span>
+            <span class="issue-date"> 생성일: {{ formatDate(issue.createdAt) }} </span>
           </div>
         </div>
       </div>
@@ -100,11 +98,12 @@ export default {
         }
         const data = await response.json()
         console.log('받은 데이터:', data)
-        issues.value = data
-        loading.value = false
+        // 백엔드에서 null을 반환할 경우 빈 배열로 처리
+        issues.value = data === null ? [] : data
       } catch (err) {
         console.error('이슈 목록 가져오기 오류:', err)
         error.value = err.message
+      } finally {
         loading.value = false
       }
     }
@@ -131,7 +130,7 @@ export default {
       return date.toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
       })
     }
 
@@ -146,9 +145,9 @@ export default {
       goToIssueDetail,
       formatDate,
       loading,
-      error
+      error,
     }
-  }
+  },
 }
 </script>
 
@@ -176,6 +175,10 @@ export default {
   gap: 10px;
 }
 
+.filter-group select {
+  width: auto;
+}
+
 .issue-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -187,7 +190,9 @@ export default {
   border-radius: 8px;
   padding: 15px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .issue-card:hover {
@@ -238,12 +243,25 @@ export default {
   margin-top: 10px;
 }
 
-.issue-card-footer {
+.issue-meta {
   display: flex;
   justify-content: space-between;
-  margin-top: 15px;
+  align-items: center;
   font-size: 14px;
   color: #6c757d;
+}
+
+.issue-assignee {
+  text-align: left;
+}
+
+.issue-date {
+  text-align: right;
+}
+
+.issue-card-footer {
+  margin-top: 15px;
+  width: 100%;
 }
 
 .loading {
@@ -265,7 +283,9 @@ export default {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .no-issues {

@@ -6,4 +6,35 @@
 -- 5. 결과 컬럼: HBL_NO, CNTR_COUNT, ETD
 -- 6. 정렬: CNTR_COUNT DESC, ETD ASC
 
--- 여기에 SQL 쿼리를 작성하세요
+-- 문제 1 정답
+WITH CONTAINER_COUNTS AS (
+    SELECT 
+        h.HBL_NO,
+        COUNT(DISTINCT c.CNTR_NO) AS CNTR_COUNT,
+        h.ETD
+    FROM 
+        FMS_HBL_MST h
+    JOIN 
+        FMS_HBL_CNTR c ON h.HBL_NO = c.HBL_NO
+    WHERE 
+        c.CNTR_NO IS NOT NULL
+    GROUP BY 
+        h.HBL_NO, h.ETD
+),
+RANKED_RESULTS AS (
+    SELECT 
+        HBL_NO,
+        CNTR_COUNT,
+        ETD,
+        RANK() OVER (ORDER BY CNTR_COUNT DESC, ETD ASC) AS RANK_NUM
+    FROM 
+        CONTAINER_COUNTS
+)
+SELECT 
+    HBL_NO,
+    CNTR_COUNT,
+    ETD
+FROM 
+    RANKED_RESULTS
+WHERE 
+    RANK_NUM = 1;
